@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.su.blog.dao.UserDao">
+    <resultMap id="BaseResultMap" type="com.su.blog.entity.User">
+        <id column="id" jdbcType="INTEGER" property="id"/>
+        <result column="username" jdbcType="VARCHAR" property="username"/>
+        <result column="password" jdbcType="VARCHAR" property="password"/>
+        <result column="email" jdbcType="VARCHAR" property="email"/>
+        <result column="notice" jdbcType="BIT" property="notice"/>
+        <result column="disabledDiscuss" jdbcType="BIT" property="disabledDiscuss"/>
+        <result column="role" jdbcType="TINYINT" property="role"/>
+        <result column="createdAt" jdbcType="VARCHAR" property="createdAt"/>
+        <result column="updatedAt" jdbcType="VARCHAR" property="updatedAt"/>
+        <result column="github" jdbcType="LONGVARCHAR" property="github"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id
+        , username, password, email, notice, disabledDiscuss, role, createdAt, updatedAt,github
+    </sql>
+
+    <sql id="Base_Column_List_NoPwd">
+        id
+        , username, email, notice, disabledDiscuss, role, createdAt, updatedAt,github
+    </sql>
+
+    <delete id="delete">
+        delete
+        from user
+        where id = #{id,jdbcType=INTEGER}
+    </delete>
+
+    <insert id="insert" parameterType="com.su.blog.entity.User">
+        insert into user (username, password, email,
+                          createdAt, updatedAt, github)
+        values (#{username,jdbcType=VARCHAR}, #{password,jdbcType=VARCHAR}, #{email,jdbcType=VARCHAR},
+                now(), now(), #{github,jdbcType=LONGVARCHAR})
+    </insert>
+
+    <select id="getIdByUsername" resultType="integer">
+        SELECT id
+        FROM `user`
+        WHERE username = #{username} LIMIT 0,1
+    </select>
+
+    <select id="getIdByEmail" resultType="integer">
+        SELECT id
+        FROM `user`
+        WHERE email = #{email} LIMIT 0,1
+    </select>
+
+    <select id="getInfoByName" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from user
+        where username = #{username}
+    </select>
+
+    <select id="getListCount" resultType="integer">
+        select count(*)
+        from user
+        <where>
+            <if test="item.username != null and item.username != ''">
+                AND username LIKE CONCAT(CONCAT('%', #{item.username}), '%')
+            </if>
+            <if test="item.rangeDate != null and item.rangeDate.length>0">
+                AND (createdAt BETWEEN #{item.rangeDate[0]} AND #{item.rangeDate[1]})
+            </if>
+        </where>
+    </select>
+
+    <select id="getList" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List_NoPwd"/>
+        from user
+        <where>
+            <if test="item.username != null and item.username != ''">
+                AND username LIKE CONCAT(CONCAT('%', #{item.username}), '%')
+            </if>
+            <if test="item.rangeDate != null and item.rangeDate.length >0 ">
+                AND (createdAt BETWEEN #{item.rangeDate[0]} AND #{item.rangeDate[1]})
+            </if>
+        </where>
+        ORDER BY createdAt DESC
+        LIMIT #{item.offset},#{item.pageSize}
+    </select>
+
+    <update id="updateNotice">
+        update user
+        set notice=#{notice}
+        where id = #{id}
+    </update>
+
+    <update id="updateDisabledDiscuss">
+        update user
+        set disabledDiscuss=#{disabledDiscuss}
+        where id = #{id}
+    </update>
+
+    <select id="getUserDiscuss" resultType="integer">
+        select
+            disabledDiscuss
+        from user
+        where id = #{id,jdbcType=INTEGER}
+    </select>
+</mapper>

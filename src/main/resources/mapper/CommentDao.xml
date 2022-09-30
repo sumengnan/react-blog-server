@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.su.blog.dao.CommentDao">
+    <resultMap id="BaseResultMap" type="com.su.blog.entity.Comment">
+        <id column="id" jdbcType="INTEGER" property="id"/>
+        <result column="articleId" jdbcType="INTEGER" property="articleId"/>
+        <result column="createdAt" jdbcType="TIMESTAMP" property="createdAt"/>
+        <result column="updatedAt" jdbcType="TIMESTAMP" property="updatedAt"/>
+        <result column="userId" jdbcType="INTEGER" property="userId"/>
+        <result column="content" jdbcType="LONGVARCHAR" property="content"/>
+    </resultMap>
+
+    <resultMap id="BaseResultBoMap" type="com.su.blog.entity.vo.CommentBo">
+        <id column="id" jdbcType="INTEGER" property="id"/>
+        <result column="articleId" jdbcType="INTEGER" property="articleId"/>
+        <result column="createdAt" jdbcType="TIMESTAMP" property="createdAt"/>
+        <result column="updatedAt" jdbcType="TIMESTAMP" property="updatedAt"/>
+        <result column="userId" jdbcType="INTEGER" property="userId"/>
+        <result column="content" jdbcType="LONGVARCHAR" property="content"/>
+        <collection property="replies" javaType="ArrayList" ofType="com.su.blog.entity.Reply">
+            <id column="replyId" jdbcType="INTEGER" property="id"/>
+            <result column="replyCreatedAt" jdbcType="VARCHAR" property="createdAt"/>
+            <result column="replyUpdatedAt" jdbcType="VARCHAR" property="updatedAt"/>
+            <result column="replyArticleId" jdbcType="VARCHAR" property="articleId"/>
+            <result column="replyCommentId" jdbcType="VARCHAR" property="commentId"/>
+            <result column="replyUserId" jdbcType="VARCHAR" property="userId"/>
+        </collection>
+        <collection property="user" javaType="ArrayList" ofType="com.su.blog.entity.User">
+            <id column="user_id" jdbcType="INTEGER" property="id"/>
+            <result column="userUsername" jdbcType="VARCHAR" property="username"/>
+            <result column="userPassword" jdbcType="VARCHAR" property="password"/>
+            <result column="userEmail" jdbcType="VARCHAR" property="email"/>
+            <result column="userNotice" jdbcType="BIT" property="notice"/>
+            <result column="userDisabledDiscuss" jdbcType="BIT" property="disabledDiscuss"/>
+            <result column="userRole" jdbcType="TINYINT" property="role"/>
+            <result column="userCreatedAt" jdbcType="VARCHAR" property="createdAt"/>
+            <result column="userUpdatedAt" jdbcType="VARCHAR" property="updatedAt"/>
+            <result column="userGithub" jdbcType="LONGVARCHAR" property="github"/>
+        </collection>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id
+        , articleId, createdAt, updatedAt, userId,content
+    </sql>
+
+    <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+        delete
+        from comment
+        where id = #{id,jdbcType=INTEGER}
+    </delete>
+
+    <insert id="insert" parameterType="com.su.blog.entity.Comment">
+        insert into comment (articleId, createdAt, updatedAt, userId, content)
+        values (#{articleId,jdbcType=INTEGER}, now(), now(), #{userId,jdbcType=INTEGER},
+                #{content,jdbcType=LONGVARCHAR})
+    </insert>
+
+    <update id="updateByPrimaryKey" parameterType="com.su.blog.entity.Comment">
+        update comment
+        set articleId = #{articleId,jdbcType=INTEGER},
+            createdAt = #{createdat,jdbcType=TIMESTAMP},
+            updatedAt = #{updatedat,jdbcType=TIMESTAMP},
+            userId    = #{userid,jdbcType=INTEGER}
+        where id = #{id,jdbcType=INTEGER}
+    </update>
+
+    <select id="getInfoByArticleId" resultMap="BaseResultBoMap">
+        SELECT c.*,
+        u.id user_id,
+        u.username userUsername,
+        u.email userEmail,
+        u.notice userNotice,
+        u.disabledDiscuss userDisabledDiscuss,
+        u.role userRole,
+        u.createdAt userCreatedAt,
+        u.updatedAt userUpdatedAt,
+        u.github userGithub,
+        r.id replyId,
+        r.createdAt replyCreatedAt,
+        r.updatedAt replyUpdatedAt,
+        r.articleId replyArticleId,
+        r.commentid replyCommentId,
+        r.userid replyUserId
+        FROM `comment` c
+        LEFT JOIN user u ON u.id = c.userid
+        LEFT JOIN reply r ON r.commentId = c.id
+        WHERE c.articleId = #{articleId}
+    </select>
+
+    <select id="getCount" resultType="integer">
+        SELECT
+            COUNT(*)
+        FROM
+            `comment`
+        WHERE
+            articleId = #{articleId}
+    </select>
+</mapper>

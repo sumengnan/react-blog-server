@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.su.blog.dao.ArticleDao">
+    <resultMap id="BaseResultMap" type="com.su.blog.entity.Article">
+        <id column="id" jdbcType="INTEGER" property="id"/>
+        <result column="title" jdbcType="VARCHAR" property="title"/>
+        <result column="viewCount" jdbcType="INTEGER" property="viewCount"/>
+        <result column="createdAt" jdbcType="VARCHAR" property="createdAt"/>
+        <result column="updatedAt" jdbcType="VARCHAR" property="updatedAt"/>
+        <result column="content" jdbcType="LONGVARCHAR" property="content"/>
+    </resultMap>
+
+    <resultMap id="ArticleMap" type="com.su.blog.entity.Article">
+        <id column="id" jdbcType="INTEGER" property="id"/>
+        <result column="title" jdbcType="VARCHAR" property="title"/>
+        <result column="viewCount" jdbcType="INTEGER" property="viewCount"/>
+        <result column="createdAt" jdbcType="VARCHAR" property="createdAt"/>
+        <result column="updatedAt" jdbcType="VARCHAR" property="updatedAt"/>
+        <result column="content" jdbcType="LONGVARCHAR" property="content"/>
+        <collection property="categories" javaType="ArrayList" ofType="com.su.blog.entity.Category">
+            <result column="categoriesName" property="name" jdbcType="VARCHAR"/>
+        </collection>
+        <collection property="tags" javaType="ArrayList" ofType="com.su.blog.entity.Tag">
+            <result column="tagName" property="name" jdbcType="VARCHAR"/>
+        </collection>
+        <collection property="comments" javaType="ArrayList" ofType="com.su.blog.entity.vo.CommentBo">
+            <id column="comId" property="id" jdbcType="INTEGER"/>
+        </collection>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id
+        , title, viewCount, createdAt, updatedAt,content
+    </sql>
+    <sql id="Base_Column_List_A">
+        a
+        .
+        id
+        , a.title,a.viewCount, a.createdAt, a.updatedAt,a.content
+    </sql>
+
+
+    <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+        delete
+        from article
+        where id = #{id,jdbcType=INTEGER}
+    </delete>
+
+    <delete id="deleteByIdList">
+        delete
+        from article
+        WHERE id IN
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </delete>
+
+
+    <insert id="insert" parameterType="com.su.blog.entity.Article" useGeneratedKeys="true" keyProperty="id">
+        insert into article (id, title, createdAt, updatedAt, content)
+        values (#{id,jdbcType=INTEGER}, #{title,jdbcType=VARCHAR}, now(), now(), #{content,jdbcType=LONGVARCHAR})
+    </insert>
+
+    <update id="updateByPrimaryKey" parameterType="com.su.blog.entity.Article">
+        update article
+        set title     = #{title,jdbcType=VARCHAR},
+            viewCount = #{viewCount,jdbcType=INTEGER},
+            updatedAt = now(),
+            content = #{content,jdbcType=VARCHAR}
+        where id = #{id,jdbcType=INTEGER}
+    </update>
+
+    <select id="getListCount" resultType="integer">
+        SELECT DISTINCT
+            a.id
+        FROM article a
+        LEFT JOIN tag ON tag.articleId = a.id
+        LEFT JOIN category c ON c.articleId = a.id
+        <where>
+            <if test="item.keyword != null and item.keyword != ''">
+                AND a.title like CONCAT(CONCAT('%', #{item.keyword}), '%')
+            </if>
+            <if test="item.tag != null and item.tag != ''">
+                AND tag.name = #{item.tag}
+            </if>
+            <if test="item.category != null and item.category != ''">
+                AND c.name = #{item.category}
+            </if>
+        </where>
+    </select>
+
+    <select id="listAll" resultMap="BaseResultMap">
+        select id,title,content from article;
+    </select>
+    <select id="getList" resultMap="ArticleMap">
+        SELECT
+        <include refid="Base_Column_List_A"/>,
+        tag.`name` AS tagName,
+        c.`name` categoriesName,
+        com.id comId
+        FROM (
+        SELECT DISTINCT
+        <include refid="Base_Column_List_A"/>
+        FROM article a
+        LEFT JOIN tag ON tag.articleId = a.id
+        LEFT JOIN category c ON c.articleId = a.id
+        <where>
+            <if test="item.keyword != null and item.keyword != ''">
+                AND a.title like CONCAT(CONCAT('%', #{item.keyword}), '%')
+            </if>
+            <if test="item.tag != null and item.tag != ''">
+                AND tag.name = #{item.tag}
+            </if>
+            <if test="item.category != null and item.category != ''">
+                AND c.name = #{item.category}
+            </if>
+        </where>
+        <if test="item.order == null">
+            ORDER BY a.createdAt desc
+        </if>
+        <if test="item.order != null and item.order != ''">
+            ORDER BY ${item.order} ${item.orderKey}
+        </if>
+        LIMIT #{item.offset},#{item.pageSize}
+        )a
+        LEFT JOIN tag ON tag.articleId = a.id
+        LEFT JOIN category c ON c.articleId = a.id
+        LEFT JOIN comment com ON com.articleId = a.id
+    </select>
+
+    <select id="getListByMdFile" resultMap="ArticleMap">
+        SELECT
+            <include refid="Base_Column_List_A"/>,
+            tag.`name` AS tagName,
+            c.`name` categoriesName
+        FROM article a
+        LEFT JOIN tag ON tag.articleId = a.id
+        LEFT JOIN category c ON c.articleId = a.id
+    </select>
+
+    <select id="getInfo" parameterType="java.lang.Integer" resultMap="ArticleMap">
+        select
+        <include refid="Base_Column_List_A"/>,
+        tag.`name` tagName,
+        c.`name` categoriesName,
+        com.id comId
+        from article a
+        LEFT JOIN tag ON tag.articleId = a.id
+        LEFT JOIN category c ON c.articleId = a.id
+        LEFT JOIN comment com ON com.articleId = a.id
+        where a.id = #{id,jdbcType=INTEGER}
+    </select>
+
+    <select id="getArticleInfo" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from article a
+        where a.id = #{id,jdbcType=INTEGER}
+    </select>
+
+    <select id="getInfoByTitle" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List_A"/>
+        from article a
+        where a.title = #{title}
+    </select>
+
+    <update id="addViewCount">
+        update article set viewCount=viewCount+1 where id=#{id}
+    </update>
+</mapper>

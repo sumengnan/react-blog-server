@@ -1,0 +1,15 @@
+PUT /blog
+{
+  "settings": {
+        "index":{
+          "analysis.analyzer.default.type":"ik_max_word"
+        }
+  },
+  "mappings":{
+      "properties":{
+          "id":{"type":"keyword","index":true,"store":true},
+          "title":{"type":"text","index":true,"store":true},
+          "content":{"type":"text","index":true,"store":true}
+      }
+  }
+}
